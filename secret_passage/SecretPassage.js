@@ -32,11 +32,51 @@ Game_Map.prototype.checkPassage = function(x, y, bit) {
     }
 };
 
-var Game_CharacterBase_isTransparent = Game_CharacterBase.prototype.isTransparent;
-Game_CharacterBase.prototype.isTransparent = function() {
-    var region = $gameMap.regionId(this.x, this.y);
-    if (region === invisible_region) {
-        return true;
+var temp_mx = 0;
+var temp_my = 0;
+var tileId_below = 0;
+var Tilemap__paintTiles = Tilemap.prototype._paintTiles;
+Tilemap.prototype._paintTiles = function(startX, startY, x, y) {
+    temp_mx = startX + x;
+    temp_my = startY + y;
+    tileId_below = this._readMapData(temp_mx, temp_my + 1, 0); // only checks A type tiles
+    Tilemap__paintTiles.call(this, startX, startY, x, y);
+}
+
+var Tilemap__isHigherTile = Tilemap.prototype._isHigherTile;
+Tilemap.prototype._isHigherTile = function(tileId) {
+    var currentTile_invisibleRegion = this._readMapData(temp_mx, temp_my, 5) == invisible_region;
+    var tileOneBelow_invisibleRegion = this._readMapData(temp_mx, temp_my + 1, 5) == invisible_region;
+    var playerStandsBelow = $gamePlayer._realY > temp_my;
+    
+    if (!tileOneBelow_invisibleRegion && playerStandsBelow) { // to show the hat tops
+        return Tilemap__isHigherTile.call(this, tileId);
     }
-    return Game_CharacterBase_isTransparent.call(this);
+    if (currentTile_invisibleRegion) {
+        return 0x10;
+    }
+    if (tileOneBelow_invisibleRegion && Tilemap.isSameKindTile(tileId, tileId_below)) { // to hide the hat tops
+        return 0x10;
+    }
+    return Tilemap__isHigherTile.call(this, tileId);
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
